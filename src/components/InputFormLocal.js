@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Box from "@material-ui/core/Box";
 import Button from "@material-ui/core/Button";
 import Container from "@material-ui/core/Container";
@@ -41,9 +41,28 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function SignIn() {
+export default function SignIn({ localPeerName, setLocalPeerName }) {
   const label = "あなたの名前";
   const classes = useStyles();
+  const [disabled, setDisabled] = useState(true);
+  const [name, setName] = useState("");
+  const [isComposed, setIsComposed] = useState(false);
+
+  useEffect(() => {
+    const disabled = name === "";
+    setDisabled(disabled);
+  }, [name]);
+
+  const initializeLocalPeer = useCallback(
+    (e) => {
+      console.log("initializeLocalPeer");
+      setLocalPeerName(name);
+      e.preventDefault();
+    },
+    [name, setLocalPeerName]
+  );
+
+  if (localPeerName !== "") return <></>;
 
   return (
     <Container component="main" maxWidth="xs">
@@ -58,7 +77,16 @@ export default function SignIn() {
           label={label}
           margin="normal"
           name="name"
+          onChange={(e) => setName(e.target.value)}
+          onCompositionEnd={() => setIsComposed(false)}
+          onCompositionStart={() => setIsComposed(true)}
+          onKeyDown={(e) => {
+            if (isComposed) return;
+            if (e.target.value === "") return;
+            if (e.key === "Enter") initializeLocalPeer(e);
+          }}
           required
+          value={name}
           variant="outlined"
         />
         <form className={classes.form} noValidate>
@@ -68,6 +96,8 @@ export default function SignIn() {
             variant="contained"
             color="primary"
             className={classes.submit}
+            disabled={disabled}
+            onClick={(e) => initializeLocalPeer(e)}
           >
             決定
           </Button>
